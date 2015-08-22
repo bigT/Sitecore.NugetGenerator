@@ -1,5 +1,6 @@
-﻿$modulepath = Join-Path $env:HOMEDRIVE $env:HOMEPATH "SitecoreNugetGenerator"
+﻿$homepath = Join-Path $env:HOMEDRIVE $env:HOMEPATH
+$modulepath = Join-Path $homepath "\Documents\WindowsPowerShell\ModulesSitecoreNugetGenerator"
 
 $webClient = New-Object System.Net.WebClient
 Write-Host "Downloading Sitecore Nuget generator module to $modulepath"
-$webClient.DownloadFile('https://raw.githubusercontent.com/bigt/Home/dev/dnvm.ps1', $modulepath)
+$webClient.DownloadFile('https://rawgit.com/bigT/Sitecore.NugetGenerator/master/SitecoreNugetGenerator/SitecoreNugetGenerator.psm1', $modulepath)
