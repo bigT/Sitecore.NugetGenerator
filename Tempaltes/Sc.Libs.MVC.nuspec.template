@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<package>
+  <metadata minClientVersion="2.7">
+    <id>[[IdPrefix]].Sc.Libs.MVC</id>
+    <title>Sitecore Core support assemblies</title>
+    <version>[[Version]].[[VersionMinor]]</version>
+    <authors>Provider author information ...</authors>
+    <owners>Provide owner information ...</owners>
+    <licenseUrl>Provider license information ...</licenseUrl>
+    <projectUrl>Provider project URL ...</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <developmentDependency>true</developmentDependency>
+    <description>
+      This is a meta package that installs the correct version of public
+      NuGets used by Sitecore itself. NOTE: This package will install [[IdPrefix]].Sc.Libs.Core
+      as a dependency.
+      [[ProductVersion]]
+    </description>
+    <summary>
+      This is a meta package that installs the correct version of public
+      NuGets used by Sitecore itself. NOTE: This package will install [[IdPrefix]].Sc.Libs.Core
+      as a dependency.
+      [[ProductVersion]]
+    </summary>
+    <releaseNotes>
+    </releaseNotes>
+    <copyright></copyright>
+    <language>en-US</language>
+    <dependencies>
+      <dependency id="Antlr" version="[3.5.0.2]" />
+      <dependency id="WebGrease" version="[1.6.0]" />
+      <dependency id="Microsoft.AspNet.Mvc" version="[5.1.2]" />
+      <dependency id="Microsoft.AspNet.Razor" version="[3.1.2]" />
+      <dependency id="Microsoft.AspNet.WebPages" version="[3.1.2]" />
+      <dependency id="Microsoft.Web.Infrastructure" version="[1.0.0.0]" />
+      <dependency id="Microsoft.AspNet.WebApi" version="[5.1.2]"   />
+      <dependency id="Microsoft.AspNet.Web.Optimization" version="[1.1.3]" />
+      <dependency id="Newtonsoft.Json" version="[6.0.5]" />
+      <dependency id="[[IdPrefix]].Sc.Libs.Core" version="[[Version]]" />
+    </dependencies>
+  </metadata>
+  <files></files>
+</package>

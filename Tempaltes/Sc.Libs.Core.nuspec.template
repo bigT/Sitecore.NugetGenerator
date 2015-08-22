@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package>
+  <metadata minClientVersion="2.7">
+    <id>[[IdPrefix]].Sc.Libs.Core</id>
+    <title>Sitecore Core support assemblies</title>
+    <version>[[Version]].[[VersionMinor]]</version>
+    <authors>Provider author information ...</authors>
+    <owners>Provide owner information ...</owners>
+    <licenseUrl>Provider license information ...</licenseUrl>
+    <projectUrl>Provider project URL ...</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <developmentDependency>true</developmentDependency>
+    <description>
+      Sitecore core assemblies version [[ProductVersion]]
+    </description>
+    <summary>
+      Sitecore core assemblies version [[ProductVersion]]
+    </summary>
+    <releaseNotes>
+    </releaseNotes>
+    <copyright></copyright>
+    <language>en-US</language>
+    <dependencies></dependencies>
+  </metadata>
+  <files>
+    <file src="[[LibFolder]]" target="lib\net45" />
+  </files>
+</package>
