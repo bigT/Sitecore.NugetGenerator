@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package>
+  <metadata minClientVersion="2.7">
+    <id>[[IdPrefix]].[[MainAssmblyName]]</id>
+    <title>Sitecore '[[MainAssemblyName]]' module</title>
+    <version>3.2.0</version>
+    <authors></authors>
+    <owners></owners>
+    <licenseUrl></licenseUrl>
+    <projectUrl></projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <developmentDependency>true</developmentDependency>
+    <description>
+      Sitecore '[[MainAssemblyName]]' module.
+    </description>
+    <summary>
+      Sitecore '[[MainAssemblyName]]' module.
+    </summary>
+    <releaseNotes>
+    </releaseNotes>
+    <copyright></copyright>
+    <language>en-US</language>
+    <dependencies></dependencies>
+  </metadata>
+  <files>
+    <file src="" target="tools" />
+  </files>
+</package>

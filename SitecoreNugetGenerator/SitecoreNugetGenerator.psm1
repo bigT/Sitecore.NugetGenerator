@@ -25,45 +25,41 @@ $Assemblies = @(
  .ExtractTo
   Path to the folder the will hold extracted assemblies. The folder must already exist.
 
-  
  .Example
-   # Show a default display of this month.
-   Show-Calendar
+   # TODO
 
 #>
-function Extract-SitecoreCoreAssemblies {
-param (
-    [Parameter(Mandatory=$true, HelpMessage="Path to Sitecore official zip file (E.g. '.\Sitecore 8.0 rev. 150621.zip' ).")]
-    [string]$SitecoreZip,
+function Get-SitecoreAssemblies {
+    param (
+        [Parameter(Mandatory=$true, HelpMessage="Path to Sitecore official zip file (E.g. '.\Sitecore 8.0 rev. 150621.zip' ).")]
+        [string]$SitecoreZip,
 
-    [Parameter(Mandatory = $true, HelpMessage="The folder where assemblies should be extracted to.")]
-    [ValidateScript({Test-Path $_ -PathType Container})]
-    [string]$ExtractTo
-)
+        [Parameter(Mandatory = $true, HelpMessage="The folder where assemblies should be extracted to.")]
+        [ValidateScript({Test-Path $_ -PathType Container})]
+        [string]$ExtractTo
+    )
 
-# Extract core assemblies
-[Reflection.Assembly]::LoadWithPartialName( "System.IO.Compression.FileSystem" ) > $null
-$Zip = [System.IO.Compression.ZipFile]::OpenRead((Convert-Path $SitecoreZip))
-Try 
-{
-    # Find assemblies in the archive
-    $ZipAssemblies = $Zip.Entries | where { $Assemblies -contains $_.Name } 
-    if ($ZipAssemblies.Length -ne $Assemblies.Length) {
-        $ZipAssemblyName = $ZipAssemblies | % { $_.Name }
-        Throw "Could not find '$($Assemblies | where { $ZipAssemblyName -notcontains $_ })' assemblies in '$SitecoreZip'."
+    # Extract core assemblies
+    [Reflection.Assembly]::LoadWithPartialName( "System.IO.Compression.FileSystem" ) > $null
+    $Zip = [System.IO.Compression.ZipFile]::OpenRead((Convert-Path $SitecoreZip))
+    Try 
+    {
+        # Find assemblies in the archive
+        $ZipAssemblies = $Zip.Entries | where { $Assemblies -contains $_.Name }
+        if ($ZipAssemblies.Length -ne $Assemblies.Length) {
+            $ZipAssemblyName = $ZipAssemblies | % { $_.Name }
+            Throw "Could not find '$($Assemblies | where { $ZipAssemblyName -notcontains $_ })' assemblies in '$SitecoreZip'."
+        }
+ 
+        # Extract assemblies to the lib folder
+        $ZipAssemblies | % { [System.IO.Compression.ZipFileExtensions]::ExtractToFile( $_, "$ExtractTo\$($_.Name)", $true) }
+
     }
-    
-    # Extract assemblies to the lib folder
-    $ZipAssemblies | % { [System.IO.Compression.ZipFileExtensions]::ExtractToFile( $_, "$ExtractTo\$($_.Name)", $true) }
-
-
+    Finally
+    {
+        $Zip.Dispose();
+    }
 }
-Finally
-{
-    $Zip.Dispose();
-}
-}
-
 
 <# 
  .Synopsis
@@ -88,52 +84,115 @@ Finally
  .Example
    TO DO
 #>
-function Generate-SitecoreNuget {
-param (
+function New-SitecoreNugetSpec {
+    param (
 
-    [Parameter(Mandatory = $true, HelpMessage="The folder that contains Sitecore assemblies.")]
-    [ValidateScript({Test-Path $_ -PathType Container})]
-    [System.IO.DirectoryInfo]$LibPath,
+        [Parameter(Mandatory = $true, HelpMessage="The folder that contains Sitecore assemblies.")]
+        [ValidateScript({Test-Path $_ -PathType Container})]
+        [System.IO.DirectoryInfo]$LibPath,
 
-    [Parameter(Mandatory=$true, HelpMessage="Nuspec template path (E.g. 'CompanyName.Sc.Loibs.Core.nuspec.template' ).")]
-    [ValidateScript({ Test-Path $_ })]
-    [System.IO.FileInfo]$NuspecTempalte,
+        [Parameter(Mandatory=$true, HelpMessage="Nuspec template path (E.g. 'CompanyName.Sc.Loibs.Core.nuspec.template' ).")]
+        [ValidateScript({ Test-Path $_ })]
+        [System.IO.FileInfo]$NuspecTempalte,
 
-    [Parameter(Mandatory = $false, HelpMessage="Package minor version.")]
-    [string]$PackageMinorVersion = 0
-)
+        [Parameter(Mandatory=$true, HelpMessage="NuGet package Id prefix.")]
+        [System.IO.FileInfo]$PackageIdPrexif,
 
-# Get product version and derived version
-$ProductVersion = (Get-Item "$LibPath\Sitecore.Kernel.dll" -ErrorAction Stop).VersionInfo.ProductVersion
+        $PackageMinorVersion = 0,
+        $VersionInfoAssembly = "Sitecore.Kernel.dll"
+    )
 
-# Set up nuget generation context.
-$TemplateVariables = @{ 
-    IdPrefix = $PackageIdPrexif; 
-    Version = ($ProductVersion -replace "[^0-9\.]", ""); 
-    VersionMinor = $PackageMinorVersion; 
-    LibFolder = "$LibPath";
-    ProductVersion = $ProductVersion
+    # Get product version and derived version
+    $MainAssembly = Get-Item "$LibPath\$VersionInfoAssembly" -ErrorAction Stop
+    $ProductVersion = $MainAssembly.VersionInfo.ProductVersion
+
+    # Set up nuget generation context.
+    $TemplateVariables = @{ 
+        IdPrefix = $PackageIdPrexif; 
+        Version = ($ProductVersion -replace "[^0-9\.]", "");
+        VersionMinor = $PackageMinorVersion;
+        LibFolder = "$LibPath";
+        ProductVersion = $ProductVersion;
+        MainAssemblyName = $MainAssembly.BaseName;
+    }
+
+    # Expand Nuspec template into an nuspec and package a NuGet
+    # The variables below can be expanded using [[VARIABLE_NAME]] syntax (E.g. [[Version]] )
+    $Template = Get-Content $NuspecTempalte -Raw
+    $Nuspec = "";
+
+    while ($Template -match "(?smi)(?<pre>.*?)\[\[(?<exp>.*?)\]\](?<post>.*)") { 
+      $Template = $matches.post 
+      $Nuspec += $matches.pre 
+      $Nuspec += $TemplateVariables[($matches.exp)]
+    } 
+    $Nuspec += $Template
+
+    # Write our expanded nuspec into a spec file named after the template file name.
+    $NuspecFile = (Get-Item $NuspecTempalte).BaseName
+    $Nuspec | Set-Content $NuspecFile
+
+    # Pass the library path down the pipeline, useful for chaining
+    # transforms using the same libraries.
+    $LibPath
 }
 
-# Expand Nuspec template into an nuspec and package a NuGet
-# The variables below can be expanded using [[VARIABLE_NAME]] syntax (E.g. [[Version]] )
-$Template = Get-Content $NuspecTempalte -Raw
-$Nuspec = "";
+function Get-SitecoreSampleNuspecTempaltes {
+    param (
+        [Parameter(Mandatory = $true, HelpMessage="Destination folder for the templates.")]
+        [ValidateScript({Test-Path (Resolve-Path -Path $_) -PathType Container})]
+        [string] $DownloadTo
+    )
 
-while ($Template -match "(?smi)(?<pre>.*?)\[\[(?<exp>.*?)\]\](?<post>.*)") { 
-  $Template = $matches.post 
-  $Nuspec += $matches.pre 
-  $Nuspec += $TemplateVariables[($matches.exp)]
-} 
-$Nuspec += $Template
+    # Template names
+    $TemplateNames = @('Sc.Libs.Core.nuspec.template', 'Sc.Libs.MVC.nuspec.template', 'Sc.Module.nuspec.template')
 
-# Write our expanded nuspec into a spec file named after the template file name.
-$NuspecFile = (Get-Item $NuspecTempalte).BaseName
-$Nuspec | Set-Content $NuspecFile
+    # Normalise path information, ensures we're dealing with full paths
+    $DownloadTo = Resolve-Path $DownloadTo;
 
-# Pass the library path down the pipeline
-$LibPath
+    # Download templates from GitHub
+    $webClient = New-Object System.Net.WebClient
+    New-Item -ItemType Directory -Force -Path $DownloadTo > $null
+    $TemplateNames | % { $webClient.DownloadFile("https://rawgit.com/bigT/Sitecore.NugetGenerator/master/Tempaltes/$_", "$DownloadTo\$_") }
 }
 
-Export-ModuleMember -Function Generate-SitecoreNuget
-Export-ModuleMember -Function Extract-SitecoreCoreAssemblies
+function Get-SitecorePackageContent {
+    param (
+        [Parameter(Mandatory=$true, HelpMessage="A path to a zip package.")]
+        [ValidateScript({Test-Path (Resolve-Path $_) -PathType Leaf})]
+        [string]$PackageZip,
+
+        [Parameter(Mandatory = $true, HelpMessage="The folder where assemblies should be extracted to.")]
+        [ValidateScript({Test-Path $_ -PathType Container})]
+        [string]$ExtractTo
+    )
+
+    # Normalise path to the zip
+    $PackagePathInfo = Resolve-Path $PackageZip
+    $ExtractToPath = Resolve-Path $ExtractTo
+
+    # Create a temp location for the package
+    $TempPackageFiles = "$PWD\" + [System.IO.Path]::GetRandomFileName()
+
+    # Extract package to a temp location
+    [Reflection.Assembly]::LoadWithPartialName( "System.IO.Compression.FileSystem" ) > $null
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($PackagePathInfo.Path, $TempPackageFiles)
+
+    if (!(Test-Path "$TempPackageFiles\package.zip" -PathType Leaf)) {
+        Remove-Item $TempPackageFiles -Force
+        Throw "Could not find 'package.zip' inside '$PackageZip', now a valid Sitecore package."
+    }
+
+    # Extract actual package
+    [System.IO.Compression.ZipFile]::ExtractToDirectory("$TempPackageFiles\package.zip", "$TempPackageFiles\package")
+
+    Copy-Item -Recurse "$TempPackageFiles\package\files\*" -Destination $ExtractToPath
+    Remove-Item $TempPackageFiles -Force
+
+    Get-Item $ExtractToPath
+}
+
+Export-ModuleMember -Function New-SitecoreNugetSpec
+Export-ModuleMember -Function Get-SitecoreAssemblies
+Export-ModuleMember -Function Get-SitecoreSampleNuspecTempaltes
+Export-ModuleMember -Function Get-SitecorePackageContent
