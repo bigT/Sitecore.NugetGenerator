@@ -4,7 +4,7 @@ A PowerShell module that automates generation of private Sitecore NuGet packages
 ## Installing the module
 To install the module on Windows, you need to open a PowerShell prompt, and run the following script:
 
-    iex ((new-object net.webclient).DownloadString('https://rawgit.com/bigT/Sitecore.NugetGenerator/master/install.ps1'))}; `
+    iex ((new-object net.webclient).DownloadString('https://rawgit.com/bigT/Sitecore.NugetGenerator/master/install.ps1')); `
     import-module SitecoreNugetGenerator
 
 This will download the latest version of the module to your local store, and import it for use.
