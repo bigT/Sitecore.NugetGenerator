@@ -172,22 +172,22 @@ function Get-SitecorePackageContent {
     $ExtractToPath = Resolve-Path $ExtractTo
 
     # Create a temp location for the package
-    $TempPackageFiles = "$PWD\" + [System.IO.Path]::GetRandomFileName()
+    $TempPackageFiles = "$ExtractTo\" + [System.IO.Path]::GetRandomFileName()
 
     # Extract package to a temp location
     [Reflection.Assembly]::LoadWithPartialName( "System.IO.Compression.FileSystem" ) > $null
     [System.IO.Compression.ZipFile]::ExtractToDirectory($PackagePathInfo.Path, $TempPackageFiles)
 
     if (!(Test-Path "$TempPackageFiles\package.zip" -PathType Leaf)) {
-        Remove-Item $TempPackageFiles -Force
+        Remove-Item $TempPackageFiles -Force -Recurse
         Throw "Could not find 'package.zip' inside '$PackageZip', now a valid Sitecore package."
     }
 
     # Extract actual package
     [System.IO.Compression.ZipFile]::ExtractToDirectory("$TempPackageFiles\package.zip", "$TempPackageFiles\package")
 
-    Copy-Item -Recurse "$TempPackageFiles\package\files\*" -Destination $ExtractToPath
-    Remove-Item $TempPackageFiles -Force
+    Copy-Item -Recurse "$TempPackageFiles\package\files\*" -Destination $ExtractToPath -Force
+    Remove-Item $TempPackageFiles -Force -Recurse
 
     Get-Item $ExtractToPath
 }
